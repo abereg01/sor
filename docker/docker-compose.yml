@@ -1,0 +1,22 @@
+services:
+  backend:
+    image: ${HARBOR_HOST:-harbor.karlshamnenergi.se}/${HARBOR_PROJECT:-digit}/infra_graph-backend:latest
+    env_file:
+      - ../backend/.env
+    environment:
+      BIND_ADDR: 0.0.0.0:8080
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+    networks:
+      - sor
+
+  frontend:
+    image: ${HARBOR_HOST:-harbor.karlshamnenergi.se}/${HARBOR_PROJECT:-digit}/infra_graph-frontend:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    networks:
+      - sor
+
+networks:
+  sor: {}

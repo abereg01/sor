@@ -1,0 +1,54 @@
+# =========================
+# Frontend build
+# =========================
+FROM node:20-bookworm AS frontend-builder
+WORKDIR /frontend
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend/ .
+RUN npm run build
+
+
+# =========================
+# Backend build
+# =========================
+FROM rust:1.88-bookworm AS backend-builder
+WORKDIR /backend
+
+COPY backend/Cargo.toml backend/Cargo.lock ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN cargo build --release
+RUN rm -rf src
+
+COPY backend/ .
+RUN cargo build --release --locked
+
+
+# =========================
+# Runtime (backend ONLY)
+# =========================
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+# runtime deps (TLS, DNS, certs)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        net-tools \
+        procps && \
+    rm -rf /var/lib/apt/lists/*
+
+# backend binary
+COPY --from=backend-builder /backend/target/release/infra_graph /app/infra_graph
+
+# frontend assets (served later by nginx / traefik)
+COPY --from=frontend-builder /frontend/dist /app/frontend
+
+EXPOSE 8080
+
+# backend MUST be PID 1
+ENTRYPOINT ["/app/infra_graph"]

@@ -1,0 +1,46 @@
+version: "3.8"
+
+networks:
+  edge:
+    external: true
+  dbnet:
+    external: true
+
+services:
+  infra_graph:
+    image: harbor.karlshamnenergi.se/digit/infra_graph:latest
+    networks: [edge, dbnet]
+
+    env_file:
+      - /mnt/gluster/gv0/apps/infra_graph/env/infra_graph.env
+
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=true
+        - traefik.docker.network=edge
+
+        # HTTPS
+        - traefik.http.routers.infra.rule=Host(`sor.karlshamnenergi.se`)
+        - traefik.http.routers.infra.entrypoints=websecure
+        - traefik.http.routers.infra.tls=true
+
+        # Service
+        - traefik.http.services.infra.loadbalancer.server.port=80
+
+        # HTTP -> HTTPS
+        - traefik.http.routers.infra-http.rule=Host(`sor.karlshamnenergi.se`)
+        - traefik.http.routers.infra-http.entrypoints=web
+        - traefik.http.routers.infra-http.middlewares=infra-redirect
+        - traefik.http.middlewares.infra-redirect.redirectscheme.scheme=https
+
+        # Security headers
+        - traefik.http.middlewares.infra-headers.headers.frameDeny=true
+        - traefik.http.middlewares.infra-headers.headers.contentTypeNosniff=true
+        - traefik.http.middlewares.infra-headers.headers.stsSeconds=31536000
+        - traefik.http.middlewares.infra-headers.headers.stsIncludeSubdomains=true
+        - traefik.http.middlewares.infra-headers.headers.stsPreload=true
+        - traefik.http.routers.infra.middlewares=infra-headers
