@@ -1,0 +1,33 @@
+[package]
+name = "infra_graph"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+axum = { version = "0.7", features = ["json"] }
+tokio = { version = "1.40", features = ["macros", "rt-multi-thread", "signal"] }
+
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+base64 = "0.22"
+uuid = { version = "1.10", features = ["v4", "serde"] }
+time = { version = "0.3", features = ["serde", "formatting"] }
+
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "uuid", "time", "json"] }
+dotenvy = "0.15"
+
+tower = { version = "0.5", features = ["limit"] }
+tower-http = { version = "0.6", features = ["fs", "cors", "trace", "timeout"] }
+tower_governor = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+petgraph = "0.6"
+axum-prometheus = "0.6"
+
+rust_xlsxwriter = "0.92"
+bytes = "1"
+
+jsonwebtoken = "9"
+subtle = "2"
